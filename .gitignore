@@ -1,0 +1,14 @@
+# 패키지
+node_modules/
+
+# 환경변수
+.env
+.env.local
+.env.production
+
+# 로그
+*.log
+npm-debug.log*
+
+# 업로드 파일
+uploads/
