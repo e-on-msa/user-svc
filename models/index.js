@@ -34,7 +34,14 @@ Object.keys(db).forEach(modelName => {
   }
 });
 
-db.sequelize = sequelize;       // CLI에서 사용됨
+// 테이블 자동 생성
+// alter: true → 기존 테이블 유지하면서 변경사항만 반영
+// force: true → 절대 쓰지 말 것! 테이블 전부 날림
+sequelize.sync({ alter: true })
+  .then(() => console.log("✅ eon_user_db 테이블 동기화 완료!"))
+  .catch((err) => console.error("❌ 테이블 동기화 실패:", err.message));
+
+db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 module.exports = db;
