@@ -36,9 +36,11 @@ const redisClient = createClient({
     },
 });
 //redisClient.connect().catch(console.error);
-redisClient.connect().catch((err) => {
-    console.warn("Redis 연결 실패 (나중에 Docker로 띄울 예정):", err.message);
-});
+redisClient.connect()
+    .then(() => console.log("Redis 연결 성공"))
+    .catch((err) => {
+        console.warn("Redis 연결 실패 (나중에 Docker로 띄울 예정):", err.message);
+    });
 
 const sessionStore = new RedisStore({
     client: redisClient,
