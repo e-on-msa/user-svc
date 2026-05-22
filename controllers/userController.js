@@ -5,16 +5,16 @@ const { Op } = require("sequelize");
 const { EmailCode } = db;
 const transporter = require("../config/mail");
 const axios = require("axios");
+const rabbitmq = require("../config/rabbitmq");
 
 // BoardRequest 직접 import 제거 (community-svc 소유)
-// Day 5에서 HTTP 호출로 교체 예정
 
 /**
  * [GET] /api/user/me
  */
 exports.getMyInfo = async (req, res, next) => {
     try {
-        const userId = req.headers['x-user-id']; // req.user → 헤더
+        const userId = req.headers['x-user-id'];
         if (!userId) {
             return res.status(401).json({ success: false, message: "로그인이 필요합니다." });
         }
@@ -35,7 +35,7 @@ exports.getMyInfo = async (req, res, next) => {
  */
 exports.updateMyInfo = async (req, res, next) => {
     const { name, age, emailNotification, currentPassword, email, code } = req.body;
-    const userId = req.headers['x-user-id']; // req.user → 헤더
+    const userId = req.headers['x-user-id'];
 
     if (email) {
         return res.status(400).json({ message: "이메일은 별도 절차로 변경하세요." });
@@ -88,7 +88,7 @@ exports.updateMyInfo = async (req, res, next) => {
 
         return res.json({ success: true, message: "회원 정보가 수정되었습니다." });
     } catch (err) {
-        console.error("[❌ 서버 오류]", err);
+        console.error("[server error]", err);
         return res.status(500).json({ message: "서버 오류가 발생했습니다." });
     }
 };
@@ -98,7 +98,7 @@ exports.updateMyInfo = async (req, res, next) => {
  */
 exports.verifyPassword = async (req, res, next) => {
     const { password } = req.body;
-    const userId = req.headers['x-user-id']; // req.user → 헤더
+    const userId = req.headers['x-user-id'];
 
     if (!password) {
         return res.status(400).json({ message: "비밀번호를 입력해주세요." });
@@ -117,7 +117,7 @@ exports.verifyPassword = async (req, res, next) => {
 
         return res.json({ success: true, message: "비밀번호 확인 완료" });
     } catch (err) {
-        console.error("[❌ 비밀번호 확인 오류]", err);
+        console.error("[password verify error]", err);
         return res.status(500).json({ message: "서버 오류가 발생했습니다." });
     }
 };
@@ -127,7 +127,7 @@ exports.verifyPassword = async (req, res, next) => {
  */
 exports.changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
-    const userId = req.headers['x-user-id']; // req.user → 헤더
+    const userId = req.headers['x-user-id'];
 
     if (!currentPassword || !newPassword) {
         return res.status(400).json({ message: "필수 입력값 누락" });
@@ -153,10 +153,10 @@ exports.changePassword = async (req, res) => {
  * [PATCH] /api/user/me/deactivate - 계정 비활성화(soft-delete)
  */
 exports.deactivateAccount = async (req, res, next) => {
-    const userId = req.headers['x-user-id']; // req.user → 헤더
+    const userId = req.headers['x-user-id'];
     try {
         await User.update(
-            { state_code: "inactive", deactivated_at: new Date() }, // deactivatedAt → deactivated_at 버그 수정
+            { state_code: "inactive", deactivated_at: new Date() },
             { where: { user_id: userId } }
         );
         req.logout(() => {});
@@ -168,11 +168,26 @@ exports.deactivateAccount = async (req, res, next) => {
 
 /**
  * [DELETE] /api/user/me - 계정 탈퇴(hard-delete)
+ * RabbitMQ: user.deactivated 이벤트 발행
+ * community-svc: 게시글/댓글 HIDDEN 처리
+ * challenge-svc: 챌린지 참여 차단
  */
 exports.deleteAccount = async (req, res, next) => {
-    const userId = req.headers['x-user-id']; // req.user → 헤더
+    const userId = req.headers['x-user-id'];
     try {
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+        }
+
         await User.destroy({ where: { user_id: userId } });
+
+        // user.deactivated 이벤트 발행
+        await rabbitmq.publish('user.events', 'user.deactivated', {
+            user_id: userId,
+            deactivated_at: new Date(),
+        });
+
         req.logout(() => {});
         res.json({ success: true, message: "계정이 탈퇴되었습니다." });
     } catch (err) {
@@ -187,15 +202,9 @@ exports.deleteAccount = async (req, res, next) => {
 exports.getMyBoardRequests = async (req, res) => {
     try {
         // TODO Day 5: community-svc HTTP 호출로 교체
-        // const response = await axios.get(`${process.env.COMMUNITY_SERVICE_URL}/boards/board-requests/me`, {
-        //     headers: { 'x-user-id': req.headers['x-user-id'] }
-        // });
-        // return res.json(response.data);
-
-        // 임시: 빈 배열 반환
         res.json([]);
     } catch (error) {
-        console.error("게시판 요청 조회 실패:", error);
+        console.error("board request fetch error:", error);
         res.status(500).json({ message: "서버 오류" });
     }
 };
@@ -211,19 +220,22 @@ exports.getAllUserState = async (req, res) => {
         });
         res.status(200).json(users);
     } catch (error) {
-        console.error("사용자 상태 조회 실패:", error);
+        console.error("user state fetch error:", error);
         res.status(500).json({ message: "서버 오류" });
     }
 };
 
 /**
  * [PATCH] /api/user/state - 관리자용 유저 상태 변경
+ * RabbitMQ:
+ *   state_code = 'banned'  → user.suspended 발행
+ *   state_code = 'active'  → user.unsuspended 발행
  */
 exports.updateUserState = async (req, res) => {
     // isAdmin 미들웨어에서 이미 관리자 확인
     // req.user?.type 체크 제거
 
-    const { user_id, state_code } = req.body;
+    const { user_id, state_code, banned_until } = req.body;
     if (!user_id || !state_code) {
         return res.status(400).json({ error: "user_id와 state_code는 필수입니다." });
     }
@@ -235,12 +247,28 @@ exports.updateUserState = async (req, res) => {
         }
 
         user.state_code = state_code;
+        if (banned_until) user.banned_until = banned_until;
         await user.save();
+
+        // 정지 이벤트 발행
+        if (state_code === 'banned') {
+            await rabbitmq.publish('user.events', 'user.suspended', {
+                user_id,
+                banned_until: user.banned_until,
+            });
+        }
+
+        // 정지 해제 이벤트 발행
+        if (state_code === 'active') {
+            await rabbitmq.publish('user.events', 'user.unsuspended', {
+                user_id,
+            });
+        }
 
         res.status(200).json({ message: "사용자 상태가 업데이트되었습니다." });
     } catch (err) {
+        console.error("user state update error:", err);
         res.status(500).json({ error: "사용자 상태 업데이트 중 오류가 발생했습니다." });
-        console.error("사용자 상태 업데이트 오류:", err);
     }
 };
 
@@ -248,7 +276,7 @@ exports.updateUserState = async (req, res) => {
  * [POST] /api/user/me/profile-verify/request
  */
 exports.requestProfileUpdateCode = async (req, res) => {
-    const userId = req.headers['x-user-id']; // req.user → 헤더
+    const userId = req.headers['x-user-id'];
     try {
         const user = await User.findByPk(userId);
         if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
@@ -288,7 +316,7 @@ exports.requestProfileUpdateCode = async (req, res) => {
  */
 exports.verifyCode = async (req, res) => {
     const { code } = req.body;
-    const userId = req.headers['x-user-id']; // req.user → 헤더
+    const userId = req.headers['x-user-id'];
 
     if (!code) {
         return res.status(400).json({ message: "인증 코드를 입력해주세요." });
