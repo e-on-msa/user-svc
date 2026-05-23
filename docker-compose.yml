@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+
+  # MySQL - user-svc 전용 DB
+  user-db:
+    image: mysql:8
+    container_name: eon-user-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3307:3306"
+    volumes:
+      - user-db-data:/var/lib/mysql
+    networks:
+      - eon-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis - 세션 저장소
+  redis:
+    image: redis:alpine
+    container_name: eon-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - eon-network
+
+  # RabbitMQ - 이벤트 발행
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: eon-rabbitmq
+    ports:
+      - "5672:5672"    # 서비스 연결용
+      - "15672:15672"  # 관리자 UI (브라우저로 확인 가능)
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - eon-network
+
+  # user-svc 애플리케이션
+  user-svc:
+    build: .
+    container_name: eon-user-svc
+    ports:
+      - "4005:4005"
+    environment:
+      PORT: 4005
+      DB_HOST: user-db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      SESSION_SECRET: ${SESSION_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_URL: amqp://rabbitmq
+      FRONTEND_URL: ${FRONTEND_URL}
+    depends_on:
+      user-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    networks:
+      - eon-network
+
+networks:
+  eon-network:
+    driver: bridge
+
+volumes:
+  user-db-data:
+  redis-data:
+  rabbitmq-data:
