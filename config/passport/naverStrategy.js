@@ -8,7 +8,7 @@ module.exports = (passport) => {
       {
         clientID: process.env.NAVER_CLIENT_ID,
         clientSecret: process.env.NAVER_CLIENT_SECRET,
-        callbackURL: `${process.env.BACKEND_URL || 'http://localhost:4005'}/auth/naver/callback`,
+        callbackURL: `${process.env.BACKEND_URL || 'http://localhost:8081'}/auth/naver/callback`,
       },
       async (accessToken, refreshToken, profile, done) => {
         try {

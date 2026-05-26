@@ -75,13 +75,13 @@ app.get("/csrf-token", (req, res) => {
     res.json({ csrfToken: req.csrfToken() });
 });
 
-app.use("/auth", require("./routes/authRouter"));
+app.use("/api/auth", require("./routes/authRouter"));
+app.use("/api/mySchool", require("./routes/mySchoolRouter"));
 app.use("/api/user", require("./routes/userRouter"));
 app.use("/api/interests", require("./routes/interestRouter"));
 app.use("/api/visions", require("./routes/visionRouter"));
 app.use("/api/select", require("./routes/select"));
 app.use("/api/preferences", require("./routes/preferencesRoutes"));
-app.use("/mySchool", require("./routes/mySchoolRouter"));
 app.use("/internal", require("./routes/internalRouter"));
 
 app.use((err, req, res, next) => {

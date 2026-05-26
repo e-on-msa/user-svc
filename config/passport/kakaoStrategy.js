@@ -7,7 +7,7 @@ module.exports = (passport) => {
     new KakaoStrategy(
       {
         clientID: process.env.KAKAO_ID,
-        callbackURL: 'http://localhost:4005/auth/kakao/callback',
+        callbackURL: 'http://localhost:8081/auth/kakao/callback',
       },
       async (accessToken, refreshToken, profile, done) => {
         try {

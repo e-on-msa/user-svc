@@ -3,7 +3,7 @@ const http = require("http");
 const { app } = require("./app");
 const rabbitmq = require("./config/rabbitmq");
 
-const PORT = process.env.PORT || 4005;
+const PORT = process.env.PORT || 8081;
 
 // HTTP 서버 생성
 const server = http.createServer(app);
