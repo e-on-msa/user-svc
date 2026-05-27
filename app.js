@@ -29,18 +29,9 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-const redisClient = createClient({
-    socket: {
-        host: process.env.REDIS_HOST || "localhost",
-        port: parseInt(process.env.REDIS_PORT) || 6379,
-    },
-});
-//redisClient.connect().catch(console.error);
-redisClient.connect()
-    .then(() => console.log("Redis 연결 성공"))
-    .catch((err) => {
-        console.warn("Redis 연결 실패 (나중에 Docker로 띄울 예정):", err.message);
-    });
+
+//redis
+const redisClient = require("./config/redis");
 
 const sessionStore = new RedisStore({
     client: redisClient,
