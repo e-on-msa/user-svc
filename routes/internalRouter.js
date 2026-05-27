@@ -80,4 +80,24 @@ router.get("/users/:id/profile", async (req, res) => {
     }
 });
 
+// GET /internal/users/:userId/my-school
+// schedule-svc가 학사일정 조회 시 유저 학교 정보 조회할 때 사용
+router.get("/users/:userId/my-school", async (req, res) => {
+    try {
+        const mySchool = await db.MySchool.findOne({
+            where: { user_id: req.params.userId },
+            attributes: ["user_id", "school_code", "region_code"],
+        });
+
+        if (!mySchool) {
+            return res.status(404).json({ message: "학교 정보 없음" });
+        }
+
+        res.json(mySchool);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
 module.exports = router;
