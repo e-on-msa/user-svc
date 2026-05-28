@@ -1,15 +1,10 @@
 const localStrategy = require("./localStrategy");
-const kakaoStrategy = require("./kakaoStrategy");
-const naverStrategy = require("./naverStrategy");
-const googleStrategy = require("./googleStrategy");
+
 const db = require("../../models"); // config/passport → 루트/models
 const User = db.User;
 
 module.exports = (passport) => {
     passport.serializeUser((user, done) => {
-        if (user.isNewSocialUser) {
-            return done(null, null);
-        }
         done(null, user.user_id);
     });
 
@@ -40,7 +35,4 @@ module.exports = (passport) => {
     });
 
     localStrategy(passport);
-    kakaoStrategy(passport);
-    naverStrategy(passport);
-    googleStrategy(passport);
 };
