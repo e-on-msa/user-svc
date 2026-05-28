@@ -1,22 +1,23 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../models"); // models/index.js에서 db 불러오기
+const db = require("../models");
 
-// GET /internal/users/batch?user_ids=1,2,3
-// community-svc가 게시글 작성자 이름 조회할 때 사용
+// GET /internal/users/batch?ids=1,2,3
+// community-svc, challenge-svc가 이름/이메일 조회할 때 사용
+// ids, user_ids 둘 다 지원 (서비스마다 파라미터 이름이 달라서)
 router.get("/users/batch", async (req, res) => {
     try {
-        const { user_ids } = req.query;
+        const rawIds = req.query.ids || req.query.user_ids;
 
-        if (!user_ids) {
-            return res.status(400).json({ message: "user_ids 필요" });
+        if (!rawIds) {
+            return res.status(400).json({ message: "ids 또는 user_ids 필요" });
         }
 
-        const ids = user_ids.split(",").map(Number);
+        const ids = rawIds.split(",").map(Number);
 
         const users = await db.User.findAll({
             where: { user_id: ids },
-            attributes: ["user_id", "name", "type"],
+            attributes: ["user_id", "name", "email", "type"], // email 추가
         });
 
         res.json(users);
@@ -94,6 +95,41 @@ router.get("/users/:userId/my-school", async (req, res) => {
         }
 
         res.json(mySchool);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
+// GET /internal/preferences/user/:userId
+// recommendation-svc가 추천 계산할 때 유저 관심사/진로/나이 조회용
+router.get("/preferences/user/:userId", async (req, res) => {
+    try {
+        const user = await db.User.findOne({
+            where: { user_id: req.params.userId },
+            attributes: ["user_id", "age"],
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: "유저 없음" });
+        }
+
+        const interests = await db.SelectInterests.findAll({
+            where: { user_id: req.params.userId },
+            attributes: ["interest_id"],
+        });
+
+        const visions = await db.SelectVisions.findAll({
+            where: { user_id: req.params.userId },
+            attributes: ["vision_id"],
+        });
+
+        res.json({
+            user_id: user.user_id,
+            age: user.age,
+            interests: interests.map((i) => i.interest_id),
+            visions: visions.map((v) => v.vision_id),
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Internal Server Error" });
