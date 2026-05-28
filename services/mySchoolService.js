@@ -18,7 +18,7 @@ async function saveMySchool(userId, type, code) {
 
         const updateData = {};
         if (type === "school") updateData.school_code = code;
-        else if (type === "region") updateData.region_code = code;
+        else if (type === "region") updateData.region_id = code;
         else throw new Error("유효하지 않은 타입입니다.");
 
         if (!mySchool) {
@@ -33,7 +33,7 @@ async function saveMySchool(userId, type, code) {
             getRedisKey(userId),
             JSON.stringify({
                 school_code: updated.school_code,
-                region_code: updated.region_code,
+                region_id: updated.region_id,
             })
         );
 
@@ -58,7 +58,7 @@ async function deleteMySchool(userId, type) {
 
         const updateData = {};
         if (type === "school") updateData.school_code = null;
-        else if (type === "region") updateData.region_code = null;
+        else if (type === "region") updateData.region_id = null;
         else throw new Error("유효하지 않은 타입입니다.");
 
         await MySchool.update(updateData, { where: { user_id: userId } });
@@ -89,7 +89,7 @@ async function getMySchool(userId, type) {
             throw new Error("유효하지 않은 타입입니다.");
         }
 
-        return type === "school" ? mySchool.school_code : mySchool.region_code;
+        return type === "school" ? mySchool.school_code : mySchool.region_id;
     } catch (error) {
         console.error("나의 학교 조회 실패:", error);
         throw new Error("나의 학교 조회 실패");

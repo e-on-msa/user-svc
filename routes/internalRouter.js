@@ -86,7 +86,7 @@ router.get("/users/:userId/my-school", async (req, res) => {
     try {
         const mySchool = await db.MySchool.findOne({
             where: { user_id: req.params.userId },
-            attributes: ["user_id", "school_code", "region_code"],
+            attributes: ["user_id", "school_code", "region_id"],
         });
 
         if (!mySchool) {
