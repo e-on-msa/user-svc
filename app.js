@@ -74,6 +74,7 @@ app.use("/api/visions", require("./routes/visionRouter"));
 app.use("/api/select", require("./routes/select"));
 app.use("/api/preferences", require("./routes/preferencesRoutes"));
 app.use("/internal", require("./routes/internalRouter"));
+app.use("/internal/auth", require("./routes/authRouter")); //Gateway용 추가
 
 app.use((err, req, res, next) => {
     if (err.code === "EBADCSRFTOKEN") {
