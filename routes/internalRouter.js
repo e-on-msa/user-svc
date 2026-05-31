@@ -52,6 +52,31 @@ router.post("/auth/login", async (req, res) => {
     }
 });
 
+// GET /internal/users/batch?ids=1,2,3
+// community-svc, challenge-svc가 이름/이메일 조회할 때 사용
+// ids, user_ids 둘 다 지원 (서비스마다 파라미터 이름이 달라서)
+router.get("/users/batch", async (req, res) => {
+    try {
+        const rawIds = req.query.ids || req.query.user_ids;
+
+        if (!rawIds) {
+            return res.status(400).json({ message: "ids 또는 user_ids 필요" });
+        }
+
+        const ids = rawIds.split(",").map(Number);
+
+        const users = await db.User.findAll({
+            where: { user_id: ids },
+            attributes: ["user_id", "name", "email", "type"],
+        });
+
+        res.json(users);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
 // GET /internal/users/:id
 // Gateway가 세션에서 user_id 꺼내서 유저 정보 복원할 때 사용
 // passport의 deserializeUser 역할
@@ -77,30 +102,7 @@ router.get("/users/:id", async (req, res) => {
     }
 });
 
-// GET /internal/users/batch?ids=1,2,3
-// community-svc, challenge-svc가 이름/이메일 조회할 때 사용
-// ids, user_ids 둘 다 지원 (서비스마다 파라미터 이름이 달라서)
-router.get("/users/batch", async (req, res) => {
-    try {
-        const rawIds = req.query.ids || req.query.user_ids;
 
-        if (!rawIds) {
-            return res.status(400).json({ message: "ids 또는 user_ids 필요" });
-        }
-
-        const ids = rawIds.split(",").map(Number);
-
-        const users = await db.User.findAll({
-            where: { user_id: ids },
-            attributes: ["user_id", "name", "email", "type"],
-        });
-
-        res.json(users);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-});
 
 // GET /internal/users/:id/status
 // banCheck용 — 계정 정지 여부 확인
