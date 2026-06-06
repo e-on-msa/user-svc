@@ -21,6 +21,12 @@ exports.banUser = async (req, res) => {
 
     await target.update({ banned_until: until });
 
+    //이벤트 발행 추가
+    await rabbitmq.publish('user.events', 'user.suspended', {
+      user_id,
+      banned_until: until,
+    });
+
     res.json({
       message: `${user_id}번 사용자를 ${until} 까지 정지했습니다.`,
       banned_until: until,
