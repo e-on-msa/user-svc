@@ -1,7 +1,8 @@
 "use strict";
 
-const db   = require("../models");
+const db = require("../models");
 const User = db.User;
+const rabbitmq = require("../config/rabbitmq");
 
 // 1. 정지 생성 (또는 덮어쓰기)
 // POST /admin/ban
