@@ -97,13 +97,13 @@ exports.signupStep3 = async (req, res, next) => {
     const { name, email, code, password, confirm, age } = req.body;
     const su = req.session.signup || {};
 
-    if (!su.type || !su.agreements) {
+    if (!(su.type || su.userType) || !su.agreements) {
         clearSignupSession(req);
         return res
             .status(400)
             .json({ message: "이전 단계가 완료되지 않았습니다." });
     }
-    if (su.type === "admin") {
+    if ((su.type || su.userType) === "admin") {
         clearSignupSession(req);
         return res
             .status(403)
@@ -134,7 +134,7 @@ exports.signupStep3 = async (req, res, next) => {
             age,
             password,
             state_code: "active",
-            type: su.type,
+            type: su.type || su.userType,
             agreements: su.agreements,
         });
 
