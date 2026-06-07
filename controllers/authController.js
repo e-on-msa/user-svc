@@ -95,7 +95,7 @@ exports.verifyEmailCode = (req, res) => {
 exports.signupStep3 = async (req, res, next) => {
     console.log("🔥 [STEP3] 세션 전체:", req.session);
     const { name, email, code, password, confirm, age } = req.body;
-    const su = req.session.signup || {};
+    const su = req.body.sessionData || req.session.signup || {};
 
     if (!(su.type || su.userType) || !su.agreements) {
         clearSignupSession(req);
