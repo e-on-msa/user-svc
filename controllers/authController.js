@@ -27,10 +27,10 @@ exports.signupStep1 = (req, res) => {
 
 // 2단계: 약관 동의 저장
 exports.signupStep2 = (req, res) => {
-    if (!req.session.signup) {
+    if (!req.body.sessionData) {
         return res.status(400).json({ message: "Step1 먼저 진행해주세요." });
     }
-    req.session.signup.agreements = req.body.agreements;
+    req.session.signup = { ...req.body.sessionData, agreements: req.body.agreements };
     req.session.save(() => {
         console.log("🔥 [STEP2] 세션 전체:", req.session);
         res.json({ success: true });
@@ -503,14 +503,14 @@ exports.resetPassword = async (req, res) => {
                 .json({ message: "해당 이메일의 유저가 존재하지 않습니다." });
         }
 
-    const hashed = await bcrypt.hash(newPassword, 12);
-    user.password = hashed;
-    await user.save();
-    
-    delete req.session.resetPassword;
+        const hashed = await bcrypt.hash(newPassword, 12);
+        user.password = hashed;
+        await user.save();
 
-  } catch (err) {
-    console.error("🔴 비밀번호 변경 오류:", err);
-    return res.status(500).json({ message: "서버 오류" });
-  }
+        delete req.session.resetPassword;
+
+    } catch (err) {
+        console.error("🔴 비밀번호 변경 오류:", err);
+        return res.status(500).json({ message: "서버 오류" });
+    }
 };
