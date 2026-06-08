@@ -94,6 +94,7 @@ exports.verifyEmailCode = (req, res) => {
 // 3단계: 실제 회원 생성
 exports.signupStep3 = async (req, res, next) => {
     console.log("🔥 [STEP3] 세션 전체:", req.session);
+    console.log("🔥 [STEP3] req.body.sessionData:", req.body.sessionData);
     const { name, email, code, password, confirm, age } = req.body;
     const su = req.body.sessionData || req.session.signup || {};
 
