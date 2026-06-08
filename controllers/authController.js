@@ -110,10 +110,6 @@ exports.signupStep3 = async (req, res, next) => {
             .status(403)
             .json({ message: "관리자 계정은 생성할 수 없습니다." });
     }
-    if (email !== req.session.emailForCode || code !== req.session.emailCode) {
-        clearSignupSession(req);
-        return res.status(400).json({ message: "이메일 또는 인증 코드 오류" });
-    }
     if (password !== confirm) {
         clearSignupSession(req);
         return res
