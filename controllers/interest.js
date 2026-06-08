@@ -1,20 +1,13 @@
 // controllers/interest.js
 const db = require("../models");
-const { InterestCategory, Interests, SelectInterests } = db;
+const { SelectInterests } = db;
 
 /**
  * [GET] /api/interests/categories
  * 카테고리 목록 조회
  */
 exports.getCategories = async (req, res, next) => {
-    try {
-        const categories = await InterestCategory.findAll({
-            attributes: ["category_code", "category_name"],
-        });
-        res.json({ success: true, categories });
-    } catch (err) {
-        next(err);
-    }
+    res.json({ success: true, categories: [] });
 };
 
 /**
@@ -22,15 +15,7 @@ exports.getCategories = async (req, res, next) => {
  * 특정 카테고리 세부 관심사 조회
  */
 exports.getList = async (req, res, next) => {
-    try {
-        const interests = await Interests.findAll({
-            where: { category_code: req.params.categoryCode },
-            attributes: ["interest_id", "interest_detail"],
-        });
-        res.json({ success: true, interests });
-    } catch (err) {
-        next(err);
-    }
+    res.json({ success: true, interests: [] });
 };
 
 /**
@@ -41,18 +26,9 @@ exports.getMy = async (req, res, next) => {
     try {
         const rows = await SelectInterests.findAll({
             where: { user_id: req.user.user_id },
-            include: [
-                {
-                    model: Interests,
-                    attributes: [
-                        "interest_id",
-                        "interest_detail",
-                        "category_code",
-                    ],
-                },
-            ],
+            attributes: ["interest_id"],
         });
-        const my = rows.map((r) => r.Interests.interest_id);
+        const my = rows.map((r) => r.interest_id);
         res.json({ success: true, my });
     } catch (err) {
         next(err);
@@ -67,21 +43,9 @@ exports.getMyInterests = async (req, res, next) => {
     try {
         const rows = await SelectInterests.findAll({
             where: { user_id: req.user.user_id },
-            include: [
-                {
-                    model: Interests,
-                    attributes: [
-                        "interest_id",
-                        "interest_detail",
-                        "category_code",
-                    ],
-                },
-            ],
+            attributes: ["interest_id"],
         });
-        const my = rows.map((r) => ({
-            interest_id: r.Interest.interest_id,
-            interest_detail: r.Interest.interest_detail,
-        }));
+        const my = rows.map((r) => ({ interest_id: r.interest_id }));
         res.json({ success: true, my });
     } catch (err) {
         next(err);
