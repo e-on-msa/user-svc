@@ -14,13 +14,9 @@ const {
     verifyCode,
 } = require("../controllers/userController");
 
-const { getActivityHistory } = require("../controllers/mypageController");
 const { isLoggedIn } = require("../middleware/auth");
 
 const router = express.Router();
-
-// 활동 이력 조회 라우터
-router.get("/activity-history", isLoggedIn, getActivityHistory);
 
 // 내 정보 조회
 router.get("/me", isLoggedIn, getMyInfo);

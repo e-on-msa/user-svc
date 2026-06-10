@@ -10,11 +10,6 @@ const { isLoggedIn } = require('../middleware/auth');
 
 const router = express.Router();
 
-const mypageController = require('../controllers/mypageController');
-
-// 🔒 활동 이력 조회 (로그인 필요 + 필터/페이징)
-router.get('/activity-history', isLoggedIn, mypageController.getActivityHistory);
-
 // 내 정보 조회
 router.get('/me', isLoggedIn, getMyInfo);
 
