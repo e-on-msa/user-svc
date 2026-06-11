@@ -4,6 +4,7 @@ const db = require('../models');
 const { InterestsCache, VisionsCache } = db;
 
 async function handleMasterDataEvent(routingKey, payload) {
+    console.log('[masterData] routingKey:', routingKey, 'payload:', JSON.stringify(payload));
     switch (routingKey) {
         case 'interest.created':
         case 'interest.updated':
