@@ -1,3 +1,4 @@
+const axios = require("axios");
 const db = require("../models");
 const MySchool = db.MySchool;
 const redisClient = require("../config/redis"); // Redis 클라이언트 추가
@@ -9,6 +10,26 @@ const getRedisKey = (userId) => `user:${userId}:my_school`;
 async function saveMySchool(userId, type, code) {
     if (!userId || !type || !code) {
         throw new Error("모든 파라미터를 입력해주세요.");
+    }
+
+    if (type === "school") {
+        const scheduleUrl = process.env.SCHEDULE_SERVICE_URL;
+        const response = await axios.get(`${scheduleUrl}/internal/schools/validate`, {
+            params: { schoolCode: code },
+        });
+        if (!response.data?.success) {
+            throw Object.assign(new Error("유효하지 않은 학교 코드입니다."), { status: 400 });
+        }
+    }
+
+    if (type === "region") {
+        const scheduleUrl = process.env.SCHEDULE_SERVICE_URL;
+        const response = await axios.get(`${scheduleUrl}/internal/region/validate`, {
+            params: { regionId: code },
+        });
+        if (!response.data?.success) {
+            throw Object.assign(new Error("유효하지 않은 지역 코드입니다."), { status: 400 });
+        }
     }
 
     try {
@@ -39,6 +60,7 @@ async function saveMySchool(userId, type, code) {
 
     } catch (error) {
         console.error("나의 학교 저장 실패:", error.message);
+        if (error.status) throw error;
         throw new Error("나의 학교 저장 실패");
     }
 }

@@ -18,7 +18,7 @@ exports.saveMySchool = async (req, res) => {
         res.status(200).json({ message: "나의 학교가 저장되었습니다." });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "나의 학교 저장 실패" });
+        res.status(err.status || 500).json({ error: err.message || "나의 학교 저장 실패" });
     }
 };
 
