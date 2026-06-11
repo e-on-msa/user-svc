@@ -45,4 +45,33 @@ async function publish(exchange, routingKey, payload) {
     }
 }
 
-module.exports = { connect, publish };
+async function subscribe(callback) {
+    if (!channel) {
+        console.warn('[RabbitMQ] channel 없음. subscribe 스킵');
+        return;
+    }
+
+    const exchange = 'master-data.events';
+    const queue = 'user-svc-master-data';
+
+    await channel.assertExchange(exchange, 'topic', { durable: true });
+    await channel.assertQueue(queue, { durable: true });
+    await channel.bindQueue(queue, exchange, 'interest.*');
+    await channel.bindQueue(queue, exchange, 'vision.*');
+
+    channel.consume(queue, (msg) => {
+        if (!msg) return;
+        try {
+            const content = JSON.parse(msg.content.toString());
+            callback(msg.fields.routingKey, content);
+            channel.ack(msg);
+        } catch (err) {
+            console.error('[RabbitMQ] 메시지 처리 실패:', err.message);
+            channel.nack(msg, false, false);
+        }
+    });
+
+    console.log(`[RabbitMQ] subscribe 시작 - queue: ${queue}`);
+}
+
+module.exports = { connect, publish, subscribe };
