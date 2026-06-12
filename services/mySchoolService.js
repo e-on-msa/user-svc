@@ -25,7 +25,7 @@ async function saveMySchool(userId, type, code) {
 
     if (type === "region") {
         const scheduleUrl = process.env.SCHEDULE_SERVICE_URL;
-        const response = await axios.get(`${scheduleUrl}/internal/region/validate`, {
+        const response = await axios.get(`${scheduleUrl}/internal/regions/validate`, {
             params: { regionId: code },
             headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET },
         });
