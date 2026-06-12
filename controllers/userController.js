@@ -41,9 +41,8 @@ exports.updateMyInfo = async (req, res, next) => {
         return res.status(400).json({ message: "이메일은 별도 절차로 변경하세요." });
     }
 
-    const nameRegex = /^[가-힣a-zA-Z]{2,10}$/;
-    if (name && !nameRegex.test(name)) {
-        return res.status(400).json({ message: "이름은 2~10자 한글 또는 영문만 가능합니다." });
+    if (name !== undefined) {
+        return res.status(400).json({ message: "이름은 변경할 수 없습니다." });
     }
 
     try {
@@ -79,7 +78,6 @@ exports.updateMyInfo = async (req, res, next) => {
         }
 
         const updatedData = {};
-        if (name) updatedData.name = name;
         if (age !== undefined) updatedData.age = age;
         if (emailNotification !== undefined) updatedData.email_notification = !!emailNotification;
 
