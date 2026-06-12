@@ -1,0 +1,6 @@
+    PID  TTY        STIME COMMAND
+    208 cons2    14:21:36 /usr/bin/bash
+    329 cons3    14:21:48 /usr/bin/bash
+    564 cons0    15:50:25 /usr/bin/PS
+    204 cons1    14:21:36 /usr/bin/bash
+    203 cons0    14:21:36 /usr/bin/bash

@@ -18,7 +18,7 @@ async function saveMySchool(userId, type, code) {
             params: { schoolCode: code },
             headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET },
         });
-        if (!response.data?.success) {
+        if (!response.data?.data?.valid) {
             throw Object.assign(new Error("유효하지 않은 학교 코드입니다."), { status: 400 });
         }
     }
@@ -29,7 +29,7 @@ async function saveMySchool(userId, type, code) {
             params: { regionId: code },
             headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET },
         });
-        if (!response.data?.success) {
+        if (!response.data?.data?.valid) {
             throw Object.assign(new Error("유효하지 않은 지역 코드입니다."), { status: 400 });
         }
     }
