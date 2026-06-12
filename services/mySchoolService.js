@@ -28,6 +28,7 @@ async function saveMySchool(userId, type, code) {
         const response = await axios.get(`${scheduleUrl}/internal/regions/validate`, {
             params: { regionId: code },
             headers: { "x-internal-secret": process.env.INTERNAL_API_SECRET },
+            validateStatus: (status) => status < 500,
         });
         if (!response.data?.success) {
             throw Object.assign(new Error("유효하지 않은 지역 코드입니다."), { status: 400 });

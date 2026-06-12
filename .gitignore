@@ -11,4 +11,4 @@ node_modules/
 npm-debug.log*
 
 # 업로드 파일
-uploads/
+uploads/cookies.txt
